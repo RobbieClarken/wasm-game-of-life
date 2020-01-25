@@ -1,6 +1,7 @@
 mod utils;
 
 use wasm_bindgen::prelude::*;
+use fixedbitset::FixedBitSet;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -12,7 +13,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub struct Universe {
     width: u32,
     height: u32,
-    cells: Vec<bool>,
+    cells: FixedBitSet,
 }
 
 #[wasm_bindgen]
@@ -21,9 +22,11 @@ impl Universe {
         let width = 64;
         let height = 64;
 
-        let cells = (0..width * height)
-            .map(|i| i % 2 == 0 || i % 7 == 0 )
-            .collect();
+        let size = (width * height) as usize;
+        let mut cells = FixedBitSet::with_capacity(size);
+        for i in 0..size {
+            cells.set(i, i % 2 == 0 || i % 7 == 0);
+        }
 
         Self {
             width,
@@ -40,8 +43,8 @@ impl Universe {
         self.height
     }
 
-    pub fn cells(&self) -> *const bool {
-        self.cells.as_ptr()
+    pub fn cells(&self) -> *const u32 {
+        self.cells.as_slice().as_ptr()
     }
 
     fn get_index(&self, row: u32, column: u32) -> usize {
@@ -74,7 +77,7 @@ impl Universe {
                 let cell = self.cells[idx];
                 let live_neighbors = self.live_neighbor_count(row, col);
 
-                let next_cell = match (cell, live_neighbors) {
+                next.set(idx, match (cell, live_neighbors) {
                     // Rule 1: Any live cell with fewer than two live neighbours
                     // dies, as if caused by underpopulation.
                     (true, x) if x < 2 => false,
@@ -89,9 +92,7 @@ impl Universe {
                     (false, 3) => true,
                     // All other cells remain in the same state.
                     (otherwise, _) => otherwise,
-                };
-
-                next[idx] = next_cell;
+                });
             }
         }
 
