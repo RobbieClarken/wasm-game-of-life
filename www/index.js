@@ -18,13 +18,27 @@ const canvas = document.getElementById("game-of-life-canvas");
 canvas.height = (CELL_SIZE + 1) * height + 1;
 canvas.width = (CELL_SIZE + 1) * width + 1;
 
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext("2d");
+
+
+const fpsEl = document.getElementById("fps");
+
+let frames = 0;
+let time = Date.now();
 
 const renderLoop = () => {
+  if (Date.now() - time > 1000) {
+    fpsEl.innerText = frames;
+    frames = 0;
+    time = Date.now();
+  } else {
+    frames += 1;
+  }
   drawGrid();
   drawCells();
   universe.tick();
-  requestAnimationFrame(renderLoop);
+  // requestAnimationFrame(renderLoop);
+  setTimeout(renderLoop, 0);
 };
 
 const drawGrid = () => {
@@ -60,9 +74,9 @@ const drawCells = () => {
     for (let col = 0; col < width; col++) {
       const idx = getIndex(row, col);
 
-      ctx.fillStyle = cells[idx] === Cell.Dead
-        ? DEAD_COLOR
-        : ALIVE_COLOR;
+      ctx.fillStyle = cells[idx]
+        ? ALIVE_COLOR
+        : DEAD_COLOR;
 
       ctx.fillRect(
         col * (CELL_SIZE + 1) + 1,

@@ -1,6 +1,5 @@
 mod utils;
 
-use std::fmt;
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -10,18 +9,10 @@ use wasm_bindgen::prelude::*;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Cell {
-    Dead = 0,
-    Alive = 1,
-}
-
-#[wasm_bindgen]
 pub struct Universe {
     width: u32,
     height: u32,
-    cells: Vec<Cell>,
+    cells: Vec<bool>,
 }
 
 #[wasm_bindgen]
@@ -31,13 +22,7 @@ impl Universe {
         let height = 64;
 
         let cells = (0..width * height)
-            .map(|i| {
-                if i % 2 == 0 || i % 7 == 0 {
-                    Cell::Alive
-                } else {
-                    Cell::Dead
-                }
-            })
+            .map(|i| i % 2 == 0 || i % 7 == 0 )
             .collect();
 
         Self {
@@ -55,7 +40,7 @@ impl Universe {
         self.height
     }
 
-    pub fn cells(&self) -> *const Cell {
+    pub fn cells(&self) -> *const bool {
         self.cells.as_ptr()
     }
 
@@ -92,16 +77,16 @@ impl Universe {
                 let next_cell = match (cell, live_neighbors) {
                     // Rule 1: Any live cell with fewer than two live neighbours
                     // dies, as if caused by underpopulation.
-                    (Cell::Alive, x) if x < 2 => Cell::Dead,
+                    (true, x) if x < 2 => false,
                     // Rule 2: Any live cell with two or three live neighbours
                     // lives on to the next generation.
-                    (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
+                    (true, 2) | (true, 3) => true,
                     // Rule 3: Any live cell with more than three live
                     // neighbours dies, as if by overpopulation.
-                    (Cell::Alive, x) if x > 3 => Cell::Dead,
+                    (true, x) if x > 3 => false,
                     // Rule 4: Any dead cell with exactly three live neighbours
                     // becomes a live cell, as if by reproduction.
-                    (Cell::Dead, 3) => Cell::Alive,
+                    (false, 3) => true,
                     // All other cells remain in the same state.
                     (otherwise, _) => otherwise,
                 };
@@ -111,22 +96,5 @@ impl Universe {
         }
 
         self.cells = next;
-    }
-
-    pub fn render(&self) -> String {
-        self.to_string()
-    }
-}
-
-impl fmt::Display for Universe {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for line in self.cells.as_slice().chunks(self.width as usize) {
-            for &cell in line {
-                let symbol = if cell == Cell::Dead { '◻' } else { '◼' };
-                write!(f, "{}", symbol)?;
-            }
-            write!(f, "\n")?;
-        }
-        Ok(())
     }
 }
