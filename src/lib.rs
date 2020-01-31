@@ -3,6 +3,13 @@ mod utils;
 use fixedbitset::FixedBitSet;
 use wasm_bindgen::prelude::*;
 use js_sys;
+use web_sys;
+
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -20,16 +27,28 @@ pub struct Universe {
 #[wasm_bindgen]
 impl Universe {
     pub fn new() -> Universe {
-        let width = 64;
-        let height = 64;
+        utils::set_panic_hook();
+        log!("Universe::new()");
+
+        let width = 100;
+        let height = 100;
+
+        let spawn_size = 10;
+        let spawn_min_x = width / 2 - spawn_size / 2;
+        let spawn_max_x = spawn_min_x + spawn_size;
+        let spawn_min_y = height / 2 - spawn_size / 2;
+        let spawn_max_y = spawn_min_y + spawn_size;
 
         let size = (width * height) as usize;
         let mut cells = FixedBitSet::with_capacity(size);
         for i in 0..size {
+            let column = i as u32 % width;
+            let row = i as u32 / width;
+            if column < spawn_min_x || column > spawn_max_x || row < spawn_min_y || row > spawn_max_y {
+                continue;
+            }
             cells.set(i, js_sys::Math::random() < 0.5)
-            // cells.set(i, i % 2 == 0 || i % 7 == 0);
         }
-
         Self {
             width,
             height,
