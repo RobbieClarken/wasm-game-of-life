@@ -34,14 +34,20 @@ impl Universe {
         Self {
             width,
             height,
-            cells: Self::random_cells(height, width),
+            cells: Self::random_symmetric(height, width),
         }
     }
 
     pub fn reset(&mut self) {
-        self.cells = Self::random_cells(self.height, self.width);
+        self.cells = Self::random_symmetric(self.height, self.width);
     }
 
+    pub fn clear(&mut self) {
+        let size = (self.width * self.height) as usize;
+        self.cells = FixedBitSet::with_capacity(size);
+    }
+
+    #[allow(dead_code)]
     fn random_cells(height: u32, width: u32) -> FixedBitSet {
         let spawn_size = 20;
         let spawn_min_x = width / 2 - spawn_size / 2;
@@ -62,6 +68,46 @@ impl Universe {
                 continue;
             }
             cells.set(i, js_sys::Math::random() < 0.5)
+        }
+        cells
+    }
+
+    fn random_symmetric(height: u32, width: u32) -> FixedBitSet {
+
+        let start = 40;
+        let mid_x = width / 2;
+        let mid_y = height / 2;
+
+        let size = (width * height) as usize;
+        let mut cells = FixedBitSet::with_capacity(size);
+        for x in start..mid_x {
+            for y in x..mid_y {
+                let cell = js_sys::Math::random() < 0.5;
+
+                let i = (y * width + x) as usize;
+                cells.set(i, cell);
+
+                let i = (x * width + y) as usize;
+                cells.set(i, cell);
+
+                let i = ((height - 1 - y) * width + x) as usize;
+                cells.set(i, cell);
+
+                let i = ((height - 1 - x) * width + y) as usize;
+                cells.set(i, cell);
+
+                let i = (y * width + (width - 1 - x)) as usize;
+                cells.set(i, cell);
+
+                let i = (x * width + (width - 1 - y)) as usize;
+                cells.set(i, cell);
+
+                let i = ((height - 1 - y) * width + (width - 1 - x)) as usize;
+                cells.set(i, cell);
+
+                let i = ((height - 1 - x) * width + (width - 1 - y)) as usize;
+                cells.set(i, cell);
+            }
         }
         cells
     }
@@ -166,6 +212,25 @@ impl Universe {
             (row as i32, col as i32 - 1),
             (row as i32, col as i32),
         ]);
+    }
+
+    pub fn add_pulsar(&mut self, row: u32, col: u32) {
+        for (q_row, q_col) in &[(1, 1), (1, -1), (-1, 1), (-1, -1)] {
+            self.set_cells(&[
+                (row as i32 + q_row * 1, col as i32 + q_col * 2),
+                (row as i32 + q_row * 1, col as i32 + q_col * 3),
+                (row as i32 + q_row * 1, col as i32 + q_col * 4),
+                (row as i32 + q_row * 2, col as i32 + q_col * 1),
+                (row as i32 + q_row * 3, col as i32 + q_col * 1),
+                (row as i32 + q_row * 4, col as i32 + q_col * 1),
+                (row as i32 + q_row * 6, col as i32 + q_col * 2),
+                (row as i32 + q_row * 6, col as i32 + q_col * 3),
+                (row as i32 + q_row * 6, col as i32 + q_col * 4),
+                (row as i32 + q_row * 2, col as i32 + q_col * 6),
+                (row as i32 + q_row * 3, col as i32 + q_col * 6),
+                (row as i32 + q_row * 4, col as i32 + q_col * 6),
+            ]);
+        }
     }
 }
 

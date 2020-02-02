@@ -143,7 +143,9 @@ canvas.addEventListener("click", event => {
   const row = Math.min(Math.floor(canvasTop / (CELL_SIZE + 1)), height - 1);
   const col = Math.min(Math.floor(canvasLeft / (CELL_SIZE + 1)), width - 1);
 
-  if (event.ctrlKey || event.metaKey) {
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey) {
+    universe.add_pulsar(row, col);
+  } else if (event.ctrlKey || event.metaKey) {
     universe.add_glider(row, col);
   } else {
     universe.toggle_cell(row, col);
@@ -156,5 +158,11 @@ document.getElementById("reset").addEventListener("click", () => {
   draw();
 });
 
+document.getElementById("clear").addEventListener("click", () => {
+  universe.clear();
+  draw();
+});
+
 draw();
-play();
+pause();
+// play();
