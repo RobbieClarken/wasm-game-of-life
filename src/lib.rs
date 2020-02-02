@@ -1,8 +1,8 @@
 mod utils;
 
 use fixedbitset::FixedBitSet;
-use wasm_bindgen::prelude::*;
 use js_sys;
+use wasm_bindgen::prelude::*;
 use web_sys;
 
 macro_rules! log {
@@ -29,11 +29,21 @@ impl Universe {
     pub fn new() -> Universe {
         utils::set_panic_hook();
         log!("Universe::new()");
-
         let width = 100;
         let height = 100;
+        Self {
+            width,
+            height,
+            cells: Self::random_cells(height, width),
+        }
+    }
 
-        let spawn_size = 10;
+    pub fn reset(&mut self) {
+        self.cells = Self::random_cells(self.height, self.width);
+    }
+
+    fn random_cells(height: u32, width: u32) -> FixedBitSet {
+        let spawn_size = 20;
         let spawn_min_x = width / 2 - spawn_size / 2;
         let spawn_max_x = spawn_min_x + spawn_size;
         let spawn_min_y = height / 2 - spawn_size / 2;
@@ -44,16 +54,16 @@ impl Universe {
         for i in 0..size {
             let column = i as u32 % width;
             let row = i as u32 / width;
-            if column < spawn_min_x || column > spawn_max_x || row < spawn_min_y || row > spawn_max_y {
+            if column < spawn_min_x
+                || column > spawn_max_x
+                || row < spawn_min_y
+                || row > spawn_max_y
+            {
                 continue;
             }
             cells.set(i, js_sys::Math::random() < 0.5)
         }
-        Self {
-            width,
-            height,
-            cells,
-        }
+        cells
     }
 
     pub fn width(&self) -> u32 {
@@ -106,37 +116,46 @@ impl Universe {
     }
 
     pub fn tick(&mut self) {
-        let mut next = self.cells.clone();
+        self.tick_many(1);
+    }
 
-        for row in 0..self.height {
-            for col in 0..self.width {
-                let idx = self.get_index(row, col);
-                let cell = self.cells[idx];
-                let live_neighbors = self.live_neighbor_count(row, col);
+    pub fn tick_many(&mut self, ticks: usize) {
+        for _ in 0..ticks {
+            let mut next = self.cells.clone();
+            for row in 0..self.height {
+                for col in 0..self.width {
+                    let idx = self.get_index(row, col);
+                    let cell = self.cells[idx];
+                    let live_neighbors = self.live_neighbor_count(row, col);
 
-                next.set(
-                    idx,
-                    match (cell, live_neighbors) {
-                        // Rule 1: Any live cell with fewer than two live neighbours
-                        // dies, as if caused by underpopulation.
-                        (true, x) if x < 2 => false,
-                        // Rule 2: Any live cell with two or three live neighbours
-                        // lives on to the next generation.
-                        (true, 2) | (true, 3) => true,
-                        // Rule 3: Any live cell with more than three live
-                        // neighbours dies, as if by overpopulation.
-                        (true, x) if x > 3 => false,
-                        // Rule 4: Any dead cell with exactly three live neighbours
-                        // becomes a live cell, as if by reproduction.
-                        (false, 3) => true,
-                        // All other cells remain in the same state.
-                        (otherwise, _) => otherwise,
-                    },
-                );
+                    next.set(
+                        idx,
+                        match (cell, live_neighbors) {
+                            // Rule 1: Any live cell with fewer than two live neighbours
+                            // dies, as if caused by underpopulation.
+                            (true, x) if x < 2 => false,
+                            // Rule 2: Any live cell with two or three live neighbours
+                            // lives on to the next generation.
+                            (true, 2) | (true, 3) => true,
+                            // Rule 3: Any live cell with more than three live
+                            // neighbours dies, as if by overpopulation.
+                            (true, x) if x > 3 => false,
+                            // Rule 4: Any dead cell with exactly three live neighbours
+                            // becomes a live cell, as if by reproduction.
+                            (false, 3) => true,
+                            // All other cells remain in the same state.
+                            (otherwise, _) => otherwise,
+                        },
+                    );
+                }
             }
+            self.cells = next;
         }
+    }
 
-        self.cells = next;
+    pub fn toggle_cell(&mut self, row: u32, column: u32) {
+        let idx = self.get_index(row, column);
+        self.cells.set(idx, !self.cells[idx]);
     }
 }
 
@@ -154,5 +173,4 @@ impl Universe {
             self.cells.set(idx, true);
         }
     }
-
 }

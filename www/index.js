@@ -21,10 +21,20 @@ canvas.width = (CELL_SIZE + 1) * width + 1;
 const ctx = canvas.getContext("2d");
 
 
+const ticksSlider = document.getElementById("ticks");
+const ticksReadout = document.getElementById("ticks-readout");
+ticksSlider.addEventListener("input", event => {
+  ticksReadout.textContent = event.target.value;
+});
+ticksReadout.textContent = ticksSlider.value;
+
+
 const fpsEl = document.getElementById("fps");
 
 let frames = 0;
 let time = Date.now();
+
+let animationId = null;
 
 const renderLoop = () => {
   if (Date.now() - time > 1000) {
@@ -34,11 +44,15 @@ const renderLoop = () => {
   } else {
     frames += 1;
   }
+  universe.tick_many(parseInt(ticksSlider.value, 10));
+  draw();
+  animationId = requestAnimationFrame(renderLoop);
+};
+
+const draw = () => {
   drawGrid();
   drawCells();
-  universe.tick();
-  requestAnimationFrame(renderLoop);
-};
+}
 
 const drawGrid = () => {
   ctx.beginPath();
@@ -95,4 +109,47 @@ const drawCells = () => {
   ctx.stroke();
 };
 
-requestAnimationFrame(renderLoop);
+const isPaused = () => animationId === null;
+
+const playPauseButton = document.getElementById("play-pause");
+playPauseButton.onclick = () => {
+  if (isPaused()) {
+    play();
+  } else {
+    pause();
+  }
+}
+
+const play = () => {
+  playPauseButton.textContent = "⏸";
+  renderLoop();
+}
+
+const pause = () => {
+  playPauseButton.textContent = "▶";
+  cancelAnimationFrame(animationId);
+  animationId = null;
+}
+
+canvas.addEventListener("click", event => {
+  const boundingRect = canvas.getBoundingClientRect();
+
+  const scaleX = canvas.width / boundingRect.width;
+  const scaleY = canvas.height / boundingRect.height;
+
+  const canvasLeft = (event.clientX - boundingRect.left) * scaleX;
+  const canvasTop = (event.clientY - boundingRect.top) * scaleY;
+
+  const row = Math.min(Math.floor(canvasTop / (CELL_SIZE + 1)), height - 1);
+  const col = Math.min(Math.floor(canvasLeft / (CELL_SIZE + 1)), width - 1);
+
+  universe.toggle_cell(row, col);
+});
+
+document.getElementById("reset").addEventListener("click", () => {
+  universe.reset();
+  draw();
+});
+
+draw();
+play();
