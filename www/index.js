@@ -112,13 +112,13 @@ const drawCells = () => {
 const isPaused = () => animationId === null;
 
 const playPauseButton = document.getElementById("play-pause");
-playPauseButton.onclick = () => {
+playPauseButton.addEventListener("click", () => {
   if (isPaused()) {
     play();
   } else {
     pause();
   }
-}
+});
 
 const play = () => {
   playPauseButton.textContent = "⏸";
@@ -143,7 +143,12 @@ canvas.addEventListener("click", event => {
   const row = Math.min(Math.floor(canvasTop / (CELL_SIZE + 1)), height - 1);
   const col = Math.min(Math.floor(canvasLeft / (CELL_SIZE + 1)), width - 1);
 
-  universe.toggle_cell(row, col);
+  if (event.ctrlKey || event.metaKey) {
+    universe.add_glider(row, col);
+  } else {
+    universe.toggle_cell(row, col);
+  }
+  draw();
 });
 
 document.getElementById("reset").addEventListener("click", () => {

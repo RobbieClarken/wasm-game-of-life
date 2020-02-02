@@ -157,6 +157,16 @@ impl Universe {
         let idx = self.get_index(row, column);
         self.cells.set(idx, !self.cells[idx]);
     }
+
+    pub fn add_glider(&mut self, row: u32, col: u32) {
+        self.set_cells(&[
+            (row as i32 - 2, col as i32 - 1),
+            (row as i32 - 1, col as i32),
+            (row as i32, col as i32 - 2),
+            (row as i32, col as i32 - 1),
+            (row as i32, col as i32),
+        ]);
+    }
 }
 
 impl Universe {
@@ -167,9 +177,12 @@ impl Universe {
 
     /// Set cells to be alive in a universe by passing the row and column
     /// of each cell as an array.
-    pub fn set_cells(&mut self, cells: &[(u32, u32)]) {
+    pub fn set_cells(&mut self, cells: &[(i32, i32)]) {
         for (row, col) in cells.iter().cloned() {
-            let idx = self.get_index(row, col);
+            let idx = self.get_index(
+                row.rem_euclid(self.height as i32) as u32,
+                col.rem_euclid(self.width as i32) as u32,
+            );
             self.cells.set(idx, true);
         }
     }
