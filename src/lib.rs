@@ -22,6 +22,7 @@ pub struct Universe {
     width: u32,
     height: u32,
     cells: FixedBitSet,
+    initial_cells: FixedBitSet,
 }
 
 #[wasm_bindgen]
@@ -31,25 +32,29 @@ impl Universe {
         log!("Universe::new()");
         let width = 100;
         let height = 100;
+        let cells = Self::random_symmetric(height, width);
         Self {
             width,
             height,
-            cells: Self::random_symmetric(height, width),
+            initial_cells: cells.clone(),
+            cells,
         }
     }
 
     pub fn reset(&mut self) {
         self.cells = Self::random_symmetric(self.height, self.width);
+        self.initial_cells = self.cells.clone();
     }
 
     pub fn clear(&mut self) {
         let size = (self.width * self.height) as usize;
         self.cells = FixedBitSet::with_capacity(size);
+        self.initial_cells = self.cells.clone();
     }
 
     #[allow(dead_code)]
     fn random_cells(height: u32, width: u32) -> FixedBitSet {
-        let spawn_size = 20;
+        let spawn_size = 10;
         let spawn_min_x = width / 2 - spawn_size / 2;
         let spawn_max_x = spawn_min_x + spawn_size;
         let spawn_min_y = height / 2 - spawn_size / 2;
@@ -72,8 +77,8 @@ impl Universe {
         cells
     }
 
+    #[allow(dead_code)]
     fn random_symmetric(height: u32, width: u32) -> FixedBitSet {
-
         let start = 40;
         let mid_x = width / 2;
         let mid_y = height / 2;
@@ -138,6 +143,22 @@ impl Universe {
 
     pub fn cells(&self) -> *const u32 {
         self.cells.as_slice().as_ptr()
+    }
+
+    pub fn initial_cells(&self) -> *const u32 {
+        self.initial_cells.as_slice().as_ptr()
+    }
+
+    pub fn set_state(&mut self, ptr: *const u8, buf_length: usize) {
+        let slice = unsafe { std::slice::from_raw_parts(ptr, buf_length) };
+        let size = (self.width * self.height) as usize;
+        let mut cells = FixedBitSet::with_capacity(size);
+        for i in 0..size {
+            let byte = i / 8;
+            let mask = 1 << (i % 8);
+            cells.set(i, (slice[byte] & mask) == mask);
+        }
+        self.cells = cells;
     }
 
     fn get_index(&self, row: u32, column: u32) -> usize {

@@ -1,5 +1,5 @@
 import { Universe, Cell } from "wasm-game-of-life";
-import { memory } from "wasm-game-of-life/wasm_game_of_life_bg";
+import { memory, __wbindgen_malloc, __wbindgen_free } from "wasm-game-of-life/wasm_game_of_life_bg";
 
 const CELL_SIZE = 5; // px
 const GRID_COLOR = "#CCCCCC";
@@ -85,7 +85,7 @@ const bitIsSet = (n, arr) => {
 
 const drawCells = () => {
   const cellsPtr = universe.cells();
-  const cells = new Uint8Array(memory.buffer, cellsPtr, width * height / 8);
+  const cells = new Uint8Array(memory.buffer, cellsPtr, Math.ceil(width * height / 8));
 
   ctx.beginPath();
 
@@ -161,6 +161,47 @@ document.getElementById("reset").addEventListener("click", () => {
 document.getElementById("clear").addEventListener("click", () => {
   universe.clear();
   draw();
+});
+
+document.getElementById("save-current").addEventListener("click", () => save(universe.cells()));
+
+document.getElementById("save-initial").addEventListener(
+  "click",
+  () => save(universe.initial_cells())
+);
+
+const save = cellsPtr => {
+  const cells = new Uint8Array(memory.buffer, cellsPtr, Math.ceil(width * height / 8));
+  const buffer = cells.buffer.slice(cells.byteOffset, cells.byteLength + cells.byteOffset);
+  console.log("saving cells", cells);
+  const blob = new Blob([buffer], {type: "application/octet-stream"});
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "life.dat";
+  document.body.appendChild(link);
+  link.style = "display:none";
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url));
+};
+
+const loadInput = document.getElementById("load")
+loadInput.addEventListener("change", () => {
+  const file = loadInput.files[0];
+  const reader = new FileReader();
+  reader.addEventListener("loadend", () => {
+    const data = new Uint8Array(reader.result);
+    console.log("loaded", data);
+    const ptr = __wbindgen_malloc(data.length);
+    const buffer = new Uint8Array(memory.buffer);
+    buffer.set(data, ptr);
+    universe.set_state(ptr, data.length);
+    __wbindgen_free(ptr, data.length);
+    draw();
+  });
+  reader.readAsArrayBuffer(file);
 });
 
 draw();

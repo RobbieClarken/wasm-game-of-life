@@ -15,12 +15,21 @@
         align-items: center;
         justify-content: center;
       }
+
+      .buttons {
+        flex-direction: row;
+      }
     </style>
   </head>
   <body>
-    <button id="play-pause"></button>
-    <button id="reset">Reset</button>
-    <button id="clear">Clear</button>
+    <div class="buttons">
+      <button id="play-pause"></button>
+      <button id="reset">Reset</button>
+      <button id="clear">Clear</button>
+      <button id="save-current">Save Current</button>
+      <button id="save-initial">Save Initial</button>
+      <input type="file" id="load" />
+    </div>
     <input id="ticks" type="range" min="1" max="100" value="1" />
     <label id="ticks-readout" for="ticks"></label>
     <canvas id="game-of-life-canvas"></canvas>
