@@ -41,7 +41,7 @@ impl Universe {
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn randomise(&mut self) {
         self.cells = Self::random_symmetric(self.height, self.width);
         self.initial_cells = self.cells.clone();
     }

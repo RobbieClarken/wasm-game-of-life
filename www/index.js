@@ -44,9 +44,13 @@ const renderLoop = () => {
   } else {
     frames += 1;
   }
+  renderOne();
+  animationId = requestAnimationFrame(renderLoop);
+};
+
+const renderOne = () => {
   universe.tick_many(parseInt(ticksSlider.value, 10));
   draw();
-  animationId = requestAnimationFrame(renderLoop);
 };
 
 const draw = () => {
@@ -112,9 +116,13 @@ const drawCells = () => {
 const isPaused = () => animationId === null;
 
 const playPauseButton = document.getElementById("play-pause");
-playPauseButton.addEventListener("click", () => {
+playPauseButton.addEventListener("click", event => {
   if (isPaused()) {
-    play();
+    if (event.shiftKey) {
+      renderOne();
+    } else {
+      play();
+    }
   } else {
     pause();
   }
@@ -153,8 +161,8 @@ canvas.addEventListener("click", event => {
   draw();
 });
 
-document.getElementById("reset").addEventListener("click", () => {
-  universe.reset();
+document.getElementById("randomise").addEventListener("click", () => {
+  universe.randomise();
   draw();
 });
 
@@ -206,4 +214,3 @@ loadInput.addEventListener("change", () => {
 
 draw();
 pause();
-// play();
