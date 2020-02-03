@@ -161,10 +161,18 @@ canvas.addEventListener("click", event => {
   draw();
 });
 
-document.getElementById("randomise").addEventListener("click", () => {
+document.getElementById("randomise").addEventListener("click", () => randomise());
+document.addEventListener("keydown", event => {
+  if (event.key === " ") {
+    event.preventDefault();
+    randomise();
+  }
+});
+
+const randomise = () => {
   universe.randomise();
   draw();
-});
+};
 
 document.getElementById("clear").addEventListener("click", () => {
   universe.clear();
@@ -181,7 +189,6 @@ document.getElementById("save-initial").addEventListener(
 const save = cellsPtr => {
   const cells = new Uint8Array(memory.buffer, cellsPtr, Math.ceil(width * height / 8));
   const buffer = cells.buffer.slice(cells.byteOffset, cells.byteLength + cells.byteOffset);
-  console.log("saving cells", cells);
   const blob = new Blob([buffer], {type: "application/octet-stream"});
 
   const url = URL.createObjectURL(blob);
@@ -201,7 +208,6 @@ loadInput.addEventListener("change", () => {
   const reader = new FileReader();
   reader.addEventListener("loadend", () => {
     const data = new Uint8Array(reader.result);
-    console.log("loaded", data);
     const ptr = __wbindgen_malloc(data.length);
     const buffer = new Uint8Array(memory.buffer);
     buffer.set(data, ptr);
